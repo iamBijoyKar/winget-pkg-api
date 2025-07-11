@@ -29,7 +29,12 @@ func printInfo(msg string, args ...interface{}) {
 	fmt.Printf("Info: "+msg+"\n", args...)
 }
 
-func authMiddleware() gin.HandlerFunc {
+type User struct {
+	Email  string `bson:"email" json:"email"`
+	ApiKey string `bson:"apiKey" json:"apiKey"`
+}
+
+func authMiddleware(client *mongo.Client) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		apiKey := c.GetHeader("X-API-Key")
 		if apiKey == "" {
@@ -37,8 +42,14 @@ func authMiddleware() gin.HandlerFunc {
 			c.Abort()
 			return
 		}
-		// Here you would typically validate the API key against your database
-		// For now, we will just print it
+
+		coll := client.Database("winget").Collection("users")
+		result := coll.FindOne(context.TODO(), gin.H{"apiKey": apiKey})
+		if result.Err() != nil {
+			c.JSON(401, gin.H{"error": "Invalid API key"})
+			c.Abort()
+			return
+		}
 
 		c.Next()
 	}
@@ -72,7 +83,9 @@ func main() {
 	}()
 
 	router := gin.Default()
-	router.Use(authMiddleware())
+	// authMiddleware checks for the API key in the request header
+	router.Use(authMiddleware(client))
+
 	router.GET(baseURL+"/ping", func(c *gin.Context) {
 		c.JSON(200, gin.H{
 			"message": "pong",
