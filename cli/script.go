@@ -5,35 +5,13 @@ import (
 	"crypto/sha256"
 	"fmt"
 	"os"
+	"regexp"
 	"time"
 
 	"github.com/joho/godotenv"
-	"github.com/spf13/cobra"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
 )
-
-var rootCmd = &cobra.Command{
-	Use:   "ccfmt",
-	Short: "A C/C++ code formatter written in Go",
-	Long: `ccfmt is a fast and configurable C/C++ code formatter.
-It supports formatting single files or entire directories recursively,
-with configurable rules for indentation, brace placement, and spacing.`,
-	Version: "1.0.0",
-}
-
-// Execute adds all child commands to the root command and sets flags appropriately.
-func Execute() error {
-	return rootCmd.Execute()
-}
-
-func init() {
-	cobra.OnInitialize(initConfig)
-}
-
-func initConfig() {
-	// Configuration is handled per command
-}
 
 // printError prints error messages in a consistent format
 func printError(msg string, args ...interface{}) {
@@ -77,11 +55,6 @@ func addUserToDatabase(client *mongo.Client, email string, salt string) error {
 }
 
 func main() {
-	if err := Execute(); err != nil {
-		printError("Failed to execute command: %v", err)
-		os.Exit(1)
-	}
-
 	// Load environment variables from .env file
 	err := godotenv.Load()
 	if err != nil {
@@ -114,7 +87,18 @@ func main() {
 		}
 	}()
 
-	if err := addUserToDatabase(client, "example12345@gmail.com", SALT); err != nil {
+	fmt.Println("Enter your email address to register a new user:")
+	var email string
+	fmt.Scanln(&email)
+
+	// Validate email format
+	emailRegex := `^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`
+	if matched, _ := regexp.MatchString(emailRegex, email); !matched {
+		printError("Invalid email format")
+		return
+	}
+
+	if err := addUserToDatabase(client, email, SALT); err != nil {
 		printError("Failed to add user to database: %v", err)
 		panic(err)
 	}
