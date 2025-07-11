@@ -2,17 +2,12 @@ package main
 
 import "github.com/gin-gonic/gin"
 
+const baseURL = "api/v1"
+
 func main() {
 	router := gin.Default()
 	// Define a simple GET endpoint
-
-	router.GET("/", func(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"message": "hello",
-		})
-	})
-
-	router.GET("/ping", func(c *gin.Context) {
+	router.GET(baseURL+"/ping", func(c *gin.Context) {
 		c.JSON(200, gin.H{
 			"message": "pong",
 		})
