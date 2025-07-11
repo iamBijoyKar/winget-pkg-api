@@ -2,12 +2,13 @@ package main
 
 import (
 	"context"
+	"crypto/sha256"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/joho/godotenv"
 	"github.com/spf13/cobra"
-	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
 )
@@ -54,6 +55,27 @@ type User struct {
 	ApiKey string `bson:"apiKey" json:"apiKey"`
 }
 
+func addUserToDatabase(client *mongo.Client, email string, salt string) error {
+	coll := client.Database("winget").Collection("users")
+	currentTime := time.Now().UTC()
+	if email == "" {
+		printError("Email cannot be empty")
+		return fmt.Errorf("email cannot be empty")
+	}
+	newUser := User{
+		Email:  email,
+		ApiKey: fmt.Sprintf("%x", sha256.Sum256([]byte(email+salt+currentTime.Format(time.RFC3339)))),
+	}
+
+	result, err := coll.InsertOne(context.TODO(), newUser)
+	if err != nil {
+		printError("Failed to insert user: %v", err)
+		panic(err)
+	}
+	fmt.Printf("Inserted user with ID: %v\n", result)
+	return nil
+}
+
 func main() {
 	if err := Execute(); err != nil {
 		printError("Failed to execute command: %v", err)
@@ -71,6 +93,12 @@ func main() {
 		printWarning("MONGODB_URL not set in .env, using default value")
 		os.Exit(1)
 	}
+	// Check if SALT is set
+	SALT := os.Getenv("SALT")
+	if SALT == "" {
+		printWarning("SALT not set in .env, using default value")
+		os.Exit(1)
+	}
 	// Connect to MongoDB
 	client, err := mongo.Connect(options.Client().
 		ApplyURI(MONGODB_URL))
@@ -85,23 +113,9 @@ func main() {
 			printInfo("MongoDB connection closed successfully")
 		}
 	}()
-	// Ping the MongoDB server to verify connection
-	coll := client.Database("winget").Collection("users")
-	// Define the email to search for
-	email := "example@example.com"
 
-	var result bson.M
-	err = coll.FindOne(context.TODO(), bson.M{"email": email}).Decode(&result)
-
-	if err == mongo.ErrNoDocuments {
-		fmt.Printf("No document was found with the email %s\n", email)
-		return
-	}
-	if err != nil {
+	if err := addUserToDatabase(client, "example12345@gmail.com", SALT); err != nil {
+		printError("Failed to add user to database: %v", err)
 		panic(err)
 	}
-
-	fmt.Println(result)
-
-	printInfo("Connected to MongoDB successfully")
 }
