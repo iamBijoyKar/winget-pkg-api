@@ -91,5 +91,37 @@ func main() {
 			"message": "pong",
 		})
 	})
+
+	router.GET(baseURL+"/search", func(c *gin.Context) {
+		query := c.Query("q")
+		fmt.Printf("Search query: %s\n", query)
+		if query == "" {
+			c.JSON(400, gin.H{"error": "Query parameter 'q' is required"})
+			return
+		}
+		coll := client.Database("winget").Collection("packages")
+		// filter := gin.H{"PackageName": gin.H{"$regex": query, "$options": "i"}}
+		filter := gin.H{"name": "Universal Android Debloater GUI"}
+		cursor, err := coll.Find(context.TODO(), filter)
+		fmt.Printf("Filter: %v\n", filter)
+		fmt.Printf("Cursor: %v\n", cursor)
+		if err != nil {
+			c.JSON(500, gin.H{"error": "Failed to search packages"})
+			return
+		}
+		defer cursor.Close(context.TODO())
+
+		var results []gin.H
+		for cursor.Next(context.TODO()) {
+			var pkg gin.H
+			if err := cursor.Decode(&pkg); err != nil {
+				c.JSON(500, gin.H{"error": "Failed to decode package"})
+				return
+			}
+			results = append(results, pkg)
+		}
+
+		c.JSON(200, gin.H{"results": results})
+	})
 	router.Run() // listen and serve on 0.0.0.0:8080
 }
