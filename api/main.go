@@ -98,7 +98,7 @@ func main() {
 	router.GET(baseURL+"/search", func(c *gin.Context) {
 		query := c.Query("q")
 		query = strings.TrimSpace(query)
-		logs.PrintDebug("Search query:", query)
+		// logs.PrintDebug("Search query:", query)
 		if query == "" {
 			c.JSON(400, gin.H{"error": "Query parameter 'q' is required"})
 			return
@@ -138,7 +138,7 @@ func main() {
 	router.GET(baseURL+"/packagename", func(c *gin.Context) {
 		id := c.Query("name")
 		id = strings.TrimSpace(id)
-		logs.PrintDebug("Package name:", id)
+		// logs.PrintDebug("Package name:", id)
 		if id == "" {
 			c.JSON(400, gin.H{"error": "Query parameter 'name' is required"})
 			return
@@ -171,7 +171,7 @@ func main() {
 	router.GET(baseURL+"/packageidentifier", func(c *gin.Context) {
 		identifier := c.Query("identifier")
 		identifier = strings.TrimSpace(identifier)
-		logs.PrintDebug("Package identifier:", identifier)
+		// logs.PrintDebug("Package identifier:", identifier)
 		if identifier == "" {
 			c.JSON(400, gin.H{"error": "Query parameter 'identifier' is required"})
 			return
@@ -204,7 +204,7 @@ func main() {
 	router.GET(baseURL+"/publisher", func(c *gin.Context) {
 		name := c.Query("publisher")
 		name = strings.TrimSpace(name)
-		logs.PrintDebug("Package publisher:", name)
+		// logs.PrintDebug("Package publisher:", name)
 		if name == "" {
 			c.JSON(400, gin.H{"error": "Query parameter 'publisher' is required"})
 			return
