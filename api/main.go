@@ -5,7 +5,8 @@ import (
 	"fmt"
 	"os"
 
-	// "time"
+	"time"
+
 	"github.com/gin-gonic/gin"
 	"github.com/iamBijoyKar/winget-pkg/api/internal/server"
 	logs "github.com/iamBijoyKar/winget-pkg/api/internal/utils"
@@ -42,10 +43,10 @@ func authMiddleware(client *mongo.Client) gin.HandlerFunc {
 	}
 }
 
-func rateLimitMiddleware() gin.HandlerFunc {
+func rateLimitMiddleware(rateLimiter server.RateLimiter) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ipv4 := c.ClientIP()
-		if !server.CheckRateLimit(ipv4) {
+		if !server.CheckRateLimit(ipv4, &rateLimiter) {
 			c.JSON(429, gin.H{"error": "Rate limit exceeded"})
 			c.Abort()
 			return
@@ -84,6 +85,9 @@ func main() {
 	router := gin.Default()
 	// authMiddleware checks for the API key in the request header
 	router.Use(authMiddleware(client))
+	// rateLimitMiddleware checks if the request exceeds the rate limit
+	rateLimiter := server.CreateRateLimiter(100, time.Second) // 100 requests per second
+	router.Use(rateLimitMiddleware(rateLimiter))
 
 	router.GET(baseURL+"/ping", func(c *gin.Context) {
 		c.JSON(200, gin.H{

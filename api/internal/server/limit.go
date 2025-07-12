@@ -4,50 +4,55 @@ import (
 	"time"
 )
 
-type RateLimit struct {
-	Limit     int           // Maximum number of requests allowed
-	Window    time.Duration // Time window for the rate limit
-	ResetTime time.Time     // Time when the rate limit resets
-}
-
 type RateLimiterData struct {
 	IP        string
 	Remaining int       // Remaining requests in the current window
 	Reset     time.Time // Time when the rate limit will reset
 }
 
-func (rl *RateLimit) CreateRateLimiter() {
-	rl.Limit = 5
-	rl.Window = 1 * time.Minute
-	rl.ResetTime = time.Now().Add(1 * time.Minute)
+type RateLimiterConfig struct {
+	Limit  int           // Maximum requests allowed in the window
+	Window time.Duration // Duration of the rate limit window
 }
 
-// map to store the rate limits for each IP address
-var rateLimits = make(map[string]RateLimiterData)
+type RateLimiter struct {
+	data   map[string]RateLimiterData
+	config RateLimiterConfig
+}
+
+func CreateRateLimiter(limit int, window time.Duration) RateLimiter {
+	return RateLimiter{
+		data: make(map[string]RateLimiterData),
+		config: RateLimiterConfig{
+			Limit:  limit,
+			Window: window,
+		},
+	}
+}
 
 // Function to check if the request exceeds the rate limit
-func CheckRateLimit(ip string) bool {
-	data, exists := rateLimits[ip]
+func CheckRateLimit(ip string, rateLimiter *RateLimiter) bool {
+	data, exists := rateLimiter.data[ip]
 	if !exists {
 		// If no data exists for the IP, create a new entry
 		data = RateLimiterData{
 			IP:        ip,
-			Remaining: 5, // Initial limit
-			Reset:     time.Now().Add(1 * time.Minute),
+			Remaining: rateLimiter.config.Limit, // Initial limit
+			Reset:     time.Now().Add(rateLimiter.config.Window),
 		}
-		rateLimits[ip] = data
+		rateLimiter.data[ip] = data
 		return true
 	}
 	if time.Now().After(data.Reset) {
 		// Reset the rate limit if the window has expired
-		data.Remaining = 5
-		data.Reset = time.Now().Add(1 * time.Minute)
-		rateLimits[ip] = data
+		data.Remaining = rateLimiter.config.Limit
+		data.Reset = time.Now().Add(rateLimiter.config.Window)
+		rateLimiter.data[ip] = data
 		return true
 	}
 	if data.Remaining > 0 {
 		data.Remaining--
-		rateLimits[ip] = data
+		rateLimiter.data[ip] = data
 		return true
 	}
 	return false
