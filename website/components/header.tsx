@@ -25,6 +25,9 @@ export function Header() {
           <Link href="/docs" className="text-sm font-medium hover:text-primary transition-colors">
             Documentation
           </Link>
+          <Link href="/status" className="text-sm font-medium hover:text-primary transition-colors">
+            Status
+          </Link>
           <Link href="/api-key" className="text-sm font-medium hover:text-primary transition-colors">
             Get API Key
           </Link>
@@ -60,6 +63,13 @@ export function Header() {
               onClick={() => setIsMenuOpen(false)}
             >
               Documentation
+            </Link>
+            <Link
+              href="/status"
+              className="block py-2 text-sm font-medium hover:text-primary transition-colors"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              Status
             </Link>
             <Link
               href="/api-key"

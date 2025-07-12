@@ -2,10 +2,10 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Copy, AlertCircle, CheckCircle, XCircle } from "lucide-react"
+import { AlertCircle, CheckCircle, XCircle } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { motion } from "framer-motion"
+import { JsonHighlighter, CodeBlock, InlineJsonHighlighter } from "@/components/json-highlighter"
 
 const endpoints = [
   {
@@ -16,12 +16,12 @@ const endpoints = [
     description: "Check if the API is running and accessible",
     parameters: [],
     response: {
-      success: `{
-  "message": "pong"
-}`,
-      error: `{
-  "error": "Invalid API key"
-}`,
+      success: {
+        message: "pong",
+      },
+      error: {
+        error: "Invalid API key",
+      },
     },
   },
   {
@@ -32,20 +32,21 @@ const endpoints = [
     description: "Search for packages across multiple fields including name, publisher, description, and author",
     parameters: [{ name: "q", type: "string", required: true, description: "Search query string" }],
     response: {
-      success: `{
-  "results": [
-    {
-      "PackageIdentifier": "Microsoft.VisualStudioCode",
-      "PackageName": "Visual Studio Code",
-      "Publisher": "Microsoft Corporation",
-      "ShortDescription": "Code editor redefined and optimized...",
-      "Author": "Microsoft"
-    }
-  ]
-}`,
-      error: `{
-  "error": "Query parameter 'q' is required"
-}`,
+      success: {
+        results: [
+          {
+            PackageIdentifier: "Microsoft.VisualStudioCode",
+            PackageName: "Visual Studio Code",
+            Publisher: "Microsoft Corporation",
+            ShortDescription:
+              "Code editor redefined and optimized for building and debugging modern web and cloud applications.",
+            Author: "Microsoft",
+          },
+        ],
+      },
+      error: {
+        error: "Query parameter 'q' is required",
+      },
     },
   },
   {
@@ -56,20 +57,21 @@ const endpoints = [
     description: "Search for packages by their package name",
     parameters: [{ name: "name", type: "string", required: true, description: "Package name to search for" }],
     response: {
-      success: `{
-  "results": [
-    {
-      "PackageIdentifier": "Microsoft.VisualStudioCode",
-      "PackageName": "Visual Studio Code",
-      "Publisher": "Microsoft Corporation",
-      "ShortDescription": "Code editor redefined and optimized...",
-      "Author": "Microsoft"
-    }
-  ]
-}`,
-      error: `{
-  "error": "Query parameter 'name' is required"
-}`,
+      success: {
+        results: [
+          {
+            PackageIdentifier: "Microsoft.VisualStudioCode",
+            PackageName: "Visual Studio Code",
+            Publisher: "Microsoft Corporation",
+            ShortDescription:
+              "Code editor redefined and optimized for building and debugging modern web and cloud applications.",
+            Author: "Microsoft",
+          },
+        ],
+      },
+      error: {
+        error: "Query parameter 'name' is required",
+      },
     },
   },
   {
@@ -82,20 +84,21 @@ const endpoints = [
       { name: "identifier", type: "string", required: true, description: "Package identifier to search for" },
     ],
     response: {
-      success: `{
-  "results": [
-    {
-      "PackageIdentifier": "Microsoft.VisualStudioCode",
-      "PackageName": "Visual Studio Code",
-      "Publisher": "Microsoft Corporation",
-      "ShortDescription": "Code editor redefined and optimized...",
-      "Author": "Microsoft"
-    }
-  ]
-}`,
-      error: `{
-  "error": "Query parameter 'identifier' is required"
-}`,
+      success: {
+        results: [
+          {
+            PackageIdentifier: "Microsoft.VisualStudioCode",
+            PackageName: "Visual Studio Code",
+            Publisher: "Microsoft Corporation",
+            ShortDescription:
+              "Code editor redefined and optimized for building and debugging modern web and cloud applications.",
+            Author: "Microsoft",
+          },
+        ],
+      },
+      error: {
+        error: "Query parameter 'identifier' is required",
+      },
     },
   },
   {
@@ -106,27 +109,24 @@ const endpoints = [
     description: "Search for packages by their publisher name",
     parameters: [{ name: "publisher", type: "string", required: true, description: "Publisher name to search for" }],
     response: {
-      success: `{
-  "results": [
-    {
-      "PackageIdentifier": "Microsoft.VisualStudioCode",
-      "PackageName": "Visual Studio Code",
-      "Publisher": "Microsoft Corporation",
-      "ShortDescription": "Code editor redefined and optimized...",
-      "Author": "Microsoft"
-    }
-  ]
-}`,
-      error: `{
-  "error": "Query parameter 'publisher' is required"
-}`,
+      success: {
+        results: [
+          {
+            PackageIdentifier: "Microsoft.VisualStudioCode",
+            PackageName: "Visual Studio Code",
+            Publisher: "Microsoft Corporation",
+            ShortDescription:
+              "Code editor redefined and optimized for building and debugging modern web and cloud applications.",
+            Author: "Microsoft",
+          },
+        ],
+      },
+      error: {
+        error: "Query parameter 'publisher' is required",
+      },
     },
   },
 ]
-
-const copyToClipboard = (text: string) => {
-  navigator.clipboard.writeText(text)
-}
 
 export function DocsContent() {
   return (
@@ -151,7 +151,7 @@ export function DocsContent() {
                 <CardTitle className="text-lg">Base URL</CardTitle>
               </CardHeader>
               <CardContent>
-                <code className="text-sm bg-muted px-2 py-1 rounded">https://api.winget.dev</code>
+                <InlineJsonHighlighter data="https://api.winget.dev" />
               </CardContent>
             </Card>
 
@@ -183,20 +183,11 @@ export function DocsContent() {
           <Alert className="mb-6">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
-              Include your API key in the <code>X-API-Key</code> header for all requests.
+              Include your API key in the <InlineJsonHighlighter data="X-API-Key" /> header for all requests.
             </AlertDescription>
           </Alert>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Example Request Header</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <pre className="bg-muted p-4 rounded-lg text-sm overflow-x-auto">
-                <code>X-API-Key: your-api-key-here</code>
-              </pre>
-            </CardContent>
-          </Card>
+          <CodeBlock title="Example Request Header" language="http" code="X-API-Key: your-api-key-here" />
         </motion.section>
 
         {/* Rate Limiting Section */}
@@ -213,7 +204,7 @@ export function DocsContent() {
             The API implements rate limiting to ensure fair usage and optimal performance.
           </p>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg">Rate Limit</CardTitle>
@@ -244,6 +235,19 @@ export function DocsContent() {
               </CardContent>
             </Card>
           </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Rate Limit Exceeded Response</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <JsonHighlighter
+                data={{ error: "Rate limit exceeded" }}
+                showCopyButton
+                className="bg-muted/50 rounded-lg p-4"
+              />
+            </CardContent>
+          </Card>
         </motion.section>
 
         {/* Error Handling Section */}
@@ -269,7 +273,12 @@ export function DocsContent() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-muted-foreground">Request completed successfully</p>
+                <p className="text-muted-foreground mb-4">Request completed successfully</p>
+                <JsonHighlighter
+                  data={{ message: "pong" }}
+                  compact
+                  className="bg-green-50 dark:bg-green-950/50 rounded-lg p-3"
+                />
               </CardContent>
             </Card>
 
@@ -281,7 +290,12 @@ export function DocsContent() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-muted-foreground">Missing or invalid parameters</p>
+                <p className="text-muted-foreground mb-4">Missing or invalid parameters</p>
+                <JsonHighlighter
+                  data={{ error: "Query parameter 'q' is required" }}
+                  compact
+                  className="bg-yellow-50 dark:bg-yellow-950/50 rounded-lg p-3"
+                />
               </CardContent>
             </Card>
 
@@ -293,7 +307,12 @@ export function DocsContent() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-muted-foreground">Invalid or missing API key</p>
+                <p className="text-muted-foreground mb-4">Invalid or missing API key</p>
+                <JsonHighlighter
+                  data={{ error: "Invalid API key" }}
+                  compact
+                  className="bg-red-50 dark:bg-red-950/50 rounded-lg p-3"
+                />
               </CardContent>
             </Card>
 
@@ -305,7 +324,12 @@ export function DocsContent() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-muted-foreground">Rate limit exceeded</p>
+                <p className="text-muted-foreground mb-4">Rate limit exceeded</p>
+                <JsonHighlighter
+                  data={{ error: "Rate limit exceeded" }}
+                  compact
+                  className="bg-red-50 dark:bg-red-950/50 rounded-lg p-3"
+                />
               </CardContent>
             </Card>
 
@@ -317,7 +341,12 @@ export function DocsContent() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-muted-foreground">Server error occurred</p>
+                <p className="text-muted-foreground mb-4">Server error occurred</p>
+                <JsonHighlighter
+                  data={{ error: "Failed to search packages" }}
+                  compact
+                  className="bg-red-50 dark:bg-red-950/50 rounded-lg p-3"
+                />
               </CardContent>
             </Card>
           </div>
@@ -336,7 +365,7 @@ export function DocsContent() {
             >
               <div className="flex items-center gap-3 mb-4">
                 <Badge variant={endpoint.method === "GET" ? "default" : "secondary"}>{endpoint.method}</Badge>
-                <code className="text-lg font-mono">{endpoint.path}</code>
+                <InlineJsonHighlighter data={endpoint.path} className="text-lg" />
               </div>
 
               <h2 className="text-3xl font-bold mb-2">{endpoint.title}</h2>
@@ -353,7 +382,7 @@ export function DocsContent() {
                       {endpoint.parameters.map((param) => (
                         <div key={param.name} className="border-l-2 border-primary pl-4">
                           <div className="flex items-center gap-2 mb-1">
-                            <code className="font-mono text-sm">{param.name}</code>
+                            <InlineJsonHighlighter data={param.name} />
                             <Badge variant="outline" className="text-xs">
                               {param.type}
                             </Badge>
@@ -374,26 +403,14 @@ export function DocsContent() {
               {/* Example Request */}
               <Card className="mb-6">
                 <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle>Example Request</CardTitle>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() =>
-                        copyToClipboard(
-                          `curl -X ${endpoint.method} "https://api.winget.dev${endpoint.path}${endpoint.parameters.length > 0 ? "?" + endpoint.parameters.map((p) => `${p.name}=example`).join("&") : ""}" -H "X-API-Key: your-api-key-here"`,
-                        )
-                      }
-                    >
-                      <Copy className="h-4 w-4" />
-                    </Button>
-                  </div>
+                  <CardTitle>Example Request</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <pre className="bg-muted p-4 rounded-lg text-sm overflow-x-auto">
-                    <code>{`curl -X ${endpoint.method} "https://api.winget.dev${endpoint.path}${endpoint.parameters.length > 0 ? "?" + endpoint.parameters.map((p) => `${p.name}=example`).join("&") : ""}" \\
-  -H "X-API-Key: your-api-key-here"`}</code>
-                  </pre>
+                  <CodeBlock
+                    language="bash"
+                    code={`curl -X ${endpoint.method} "https://api.winget.dev${endpoint.path}${endpoint.parameters.length > 0 ? "?" + endpoint.parameters.map((p) => `${p.name}=example`).join("&") : ""}" \\
+  -H "X-API-Key: your-api-key-here"`}
+                  />
                 </CardContent>
               </Card>
 
@@ -401,39 +418,33 @@ export function DocsContent() {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <Card>
                   <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="flex items-center gap-2">
-                        <CheckCircle className="h-5 w-5 text-green-500" />
-                        Success Response
-                      </CardTitle>
-                      <Button variant="ghost" size="icon" onClick={() => copyToClipboard(endpoint.response.success)}>
-                        <Copy className="h-4 w-4" />
-                      </Button>
-                    </div>
+                    <CardTitle className="flex items-center gap-2">
+                      <CheckCircle className="h-5 w-5 text-green-500" />
+                      Success Response
+                    </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <pre className="bg-muted p-4 rounded-lg text-sm overflow-x-auto">
-                      <code>{endpoint.response.success}</code>
-                    </pre>
+                    <JsonHighlighter
+                      data={endpoint.response.success}
+                      showCopyButton
+                      className="bg-green-50 dark:bg-green-950/50 rounded-lg p-4"
+                    />
                   </CardContent>
                 </Card>
 
                 <Card>
                   <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="flex items-center gap-2">
-                        <XCircle className="h-5 w-5 text-red-500" />
-                        Error Response
-                      </CardTitle>
-                      <Button variant="ghost" size="icon" onClick={() => copyToClipboard(endpoint.response.error)}>
-                        <Copy className="h-4 w-4" />
-                      </Button>
-                    </div>
+                    <CardTitle className="flex items-center gap-2">
+                      <XCircle className="h-5 w-5 text-red-500" />
+                      Error Response
+                    </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <pre className="bg-muted p-4 rounded-lg text-sm overflow-x-auto">
-                      <code>{endpoint.response.error}</code>
-                    </pre>
+                    <JsonHighlighter
+                      data={endpoint.response.error}
+                      showCopyButton
+                      className="bg-red-50 dark:bg-red-950/50 rounded-lg p-4"
+                    />
                   </CardContent>
                 </Card>
               </div>

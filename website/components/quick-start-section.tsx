@@ -3,31 +3,29 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Copy, ExternalLink } from "lucide-react"
+import { ExternalLink } from "lucide-react"
 import Link from "next/link"
 import { motion } from "framer-motion"
+import { CodeBlock } from "@/components/json-highlighter"
 
 const codeExample = `curl -X GET "https://api.winget.dev/api/v1/search?q=vscode" \\
   -H "X-API-Key: your-api-key-here" \\
   -H "Content-Type: application/json"`
 
-const responseExample = `{
-  "results": [
+const responseExample = {
+  results: [
     {
-      "PackageIdentifier": "Microsoft.VisualStudioCode",
-      "PackageName": "Visual Studio Code",
-      "Publisher": "Microsoft Corporation",
-      "ShortDescription": "Code editor redefined and optimized for building and debugging modern web and cloud applications.",
-      "Author": "Microsoft"
-    }
-  ]
-}`
+      PackageIdentifier: "Microsoft.VisualStudioCode",
+      PackageName: "Visual Studio Code",
+      Publisher: "Microsoft Corporation",
+      ShortDescription:
+        "Code editor redefined and optimized for building and debugging modern web and cloud applications.",
+      Author: "Microsoft",
+    },
+  ],
+}
 
 export function QuickStartSection() {
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text)
-  }
-
   return (
     <section className="py-20">
       <div className="container">
@@ -53,21 +51,14 @@ export function QuickStartSection() {
           >
             <Card>
               <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="flex items-center gap-2">
-                    Example Request
-                    <Badge variant="outline">cURL</Badge>
-                  </CardTitle>
-                  <Button variant="ghost" size="icon" onClick={() => copyToClipboard(codeExample)}>
-                    <Copy className="h-4 w-4" />
-                  </Button>
-                </div>
+                <CardTitle className="flex items-center gap-2">
+                  Example Request
+                  <Badge variant="outline">cURL</Badge>
+                </CardTitle>
                 <CardDescription>Search for packages using the search endpoint</CardDescription>
               </CardHeader>
               <CardContent>
-                <pre className="bg-muted p-4 rounded-lg text-sm overflow-x-auto">
-                  <code>{codeExample}</code>
-                </pre>
+                <CodeBlock code={codeExample} language="bash" showCopyButton />
               </CardContent>
             </Card>
           </motion.div>
@@ -80,21 +71,14 @@ export function QuickStartSection() {
           >
             <Card>
               <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="flex items-center gap-2">
-                    Example Response
-                    <Badge variant="outline">JSON</Badge>
-                  </CardTitle>
-                  <Button variant="ghost" size="icon" onClick={() => copyToClipboard(responseExample)}>
-                    <Copy className="h-4 w-4" />
-                  </Button>
-                </div>
+                <CardTitle className="flex items-center gap-2">
+                  Example Response
+                  <Badge variant="outline">JSON</Badge>
+                </CardTitle>
                 <CardDescription>JSON response with package information</CardDescription>
               </CardHeader>
               <CardContent>
-                <pre className="bg-muted p-4 rounded-lg text-sm overflow-x-auto">
-                  <code>{responseExample}</code>
-                </pre>
+                <CodeBlock code={JSON.stringify(responseExample, null, 2)} language="json" showCopyButton />
               </CardContent>
             </Card>
           </motion.div>
