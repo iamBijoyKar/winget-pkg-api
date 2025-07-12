@@ -31,7 +31,7 @@ export function Header() {
           <Link href="/api-key" className="text-sm font-medium hover:text-primary transition-colors">
             Get API Key
           </Link>
-          <Link href="https://github.com" className="text-sm font-medium hover:text-primary transition-colors">
+          <Link href="https://github.com/iamBijoyKar/winget-pkg-api" target="_blank" className="text-sm font-medium hover:text-primary transition-colors">
             GitHub
           </Link>
         </nav>
@@ -79,7 +79,8 @@ export function Header() {
               Get API Key
             </Link>
             <Link
-              href="https://github.com"
+              href="https://github.com/iamBijoyKar/winget-pkg-api"
+              target="_blank"
               className="block py-2 text-sm font-medium hover:text-primary transition-colors"
               onClick={() => setIsMenuOpen(false)}
             >

@@ -62,6 +62,7 @@ export function JsonHighlighter({
           initial={{ opacity: 0, x: -5 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.2, delay: currentLevel * 0.02 }}
+          className="overflow-auto"
         >
           <div className="flex">
             <span className={getKeyColor()}>{keyDisplay}</span>
@@ -84,6 +85,7 @@ export function JsonHighlighter({
     if (Array.isArray(value)) {
       return (
         <motion.div
+        className="overflow-auto"
           key={key}
           initial={{ opacity: 0, x: -5 }}
           animate={{ opacity: 1, x: 0 }}
@@ -127,11 +129,11 @@ export function JsonHighlighter({
 
     return (
       <motion.div
+      className="overflow-auto flex"
         key={key}
         initial={{ opacity: 0, x: -5 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.2, delay: currentLevel * 0.02 }}
-        className="flex"
       >
         <span className={getKeyColor()}>{keyDisplay}</span>
         <span className={getPunctuationColor()}>:{spacing}</span>

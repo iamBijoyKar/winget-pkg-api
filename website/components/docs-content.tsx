@@ -151,7 +151,7 @@ export function DocsContent() {
                 <CardTitle className="text-lg">Base URL</CardTitle>
               </CardHeader>
               <CardContent>
-                <InlineJsonHighlighter data="https://api.winget.dev" />
+                <InlineJsonHighlighter data="https://winget-pkg-api.onrender.com" />
               </CardContent>
             </Card>
 
