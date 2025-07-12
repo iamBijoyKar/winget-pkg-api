@@ -4,7 +4,8 @@ import (
 	"context"
 	"fmt"
 	"os"
-
+	"regexp"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -97,17 +98,25 @@ func main() {
 
 	router.GET(baseURL+"/search", func(c *gin.Context) {
 		query := c.Query("q")
-		fmt.Printf("Search query: %s\n", query)
+		query = strings.TrimSpace(query)
+		fmt.Println("Search query:", query)
 		if query == "" {
 			c.JSON(400, gin.H{"error": "Query parameter 'q' is required"})
 			return
 		}
 		coll := client.Database("winget").Collection("packages")
-		// filter := gin.H{"PackageName": gin.H{"$regex": query, "$options": "i"}}
-		filter := gin.H{"name": "Universal Android Debloater GUI"}
+		escapedQuery := regexp.QuoteMeta(query)
+		// Use regex to search in multiple fields
+		// This will search for the query in PackageName, Publisher, ShortDescription, and Author fields
+		filter := gin.H{
+			"$or": []gin.H{
+				{"PackageName": gin.H{"$regex": escapedQuery, "$options": "i"}},
+				{"Publisher": gin.H{"$regex": escapedQuery, "$options": "i"}},
+				{"ShortDescription": gin.H{"$regex": escapedQuery, "$options": "i"}},
+				{"Author": gin.H{"$regex": escapedQuery, "$options": "i"}},
+			},
+		}
 		cursor, err := coll.Find(context.TODO(), filter)
-		fmt.Printf("Filter: %v\n", filter)
-		fmt.Printf("Cursor: %v\n", cursor)
 		if err != nil {
 			c.JSON(500, gin.H{"error": "Failed to search packages"})
 			return
@@ -126,5 +135,105 @@ func main() {
 
 		c.JSON(200, gin.H{"results": results})
 	})
+
+	router.GET(baseURL+"/packagename", func(c *gin.Context) {
+		id := c.Query("name")
+		id = strings.TrimSpace(id)
+		fmt.Println("Package name:", id)
+		if id == "" {
+			c.JSON(400, gin.H{"error": "Query parameter 'name' is required"})
+			return
+		}
+		coll := client.Database("winget").Collection("packages")
+		escapedName := regexp.QuoteMeta(id)
+		filter := gin.H{
+			"PackageName": gin.H{"$regex": escapedName, "$options": "i"},
+		}
+		cursor, err := coll.Find(context.TODO(), filter)
+		if err != nil {
+			c.JSON(500, gin.H{"error": "Failed to search packages"})
+			return
+		}
+		defer cursor.Close(context.TODO())
+
+		var results []gin.H
+		for cursor.Next(context.TODO()) {
+			var pkg gin.H
+			if err := cursor.Decode(&pkg); err != nil {
+				c.JSON(500, gin.H{"error": "Failed to decode package"})
+				return
+			}
+			results = append(results, pkg)
+		}
+
+		c.JSON(200, gin.H{"results": results})
+	})
+
+	router.GET(baseURL+"/packageidentifier", func(c *gin.Context) {
+		identifier := c.Query("identifier")
+		identifier = strings.TrimSpace(identifier)
+		fmt.Println("Package identifier:", identifier)
+		if identifier == "" {
+			c.JSON(400, gin.H{"error": "Query parameter 'identifier' is required"})
+			return
+		}
+		coll := client.Database("winget").Collection("packages")
+		escapedIdentifier := regexp.QuoteMeta(identifier)
+		filter := gin.H{
+			"PackageIdentifier": gin.H{"$regex": escapedIdentifier, "$options": "i"},
+		}
+		cursor, err := coll.Find(context.TODO(), filter)
+		if err != nil {
+			c.JSON(500, gin.H{"error": "Failed to search packages"})
+			return
+		}
+		defer cursor.Close(context.TODO())
+
+		var results []gin.H
+		for cursor.Next(context.TODO()) {
+			var pkg gin.H
+			if err := cursor.Decode(&pkg); err != nil {
+				c.JSON(500, gin.H{"error": "Failed to decode package"})
+				return
+			}
+			results = append(results, pkg)
+		}
+
+		c.JSON(200, gin.H{"results": results})
+	})
+
+	router.GET(baseURL+"/publisher", func(c *gin.Context) {
+		name := c.Query("publisher")
+		name = strings.TrimSpace(name)
+		fmt.Println("Package publisher:", name)
+		if name == "" {
+			c.JSON(400, gin.H{"error": "Query parameter 'publisher' is required"})
+			return
+		}
+		coll := client.Database("winget").Collection("packages")
+		escapedPublisher := regexp.QuoteMeta(name)
+		filter := gin.H{
+			"Publisher": gin.H{"$regex": escapedPublisher, "$options": "i"},
+		}
+		cursor, err := coll.Find(context.TODO(), filter)
+		if err != nil {
+			c.JSON(500, gin.H{"error": "Failed to search packages"})
+			return
+		}
+		defer cursor.Close(context.TODO())
+
+		var results []gin.H
+		for cursor.Next(context.TODO()) {
+			var pkg gin.H
+			if err := cursor.Decode(&pkg); err != nil {
+				c.JSON(500, gin.H{"error": "Failed to decode package"})
+				return
+			}
+			results = append(results, pkg)
+		}
+
+		c.JSON(200, gin.H{"results": results})
+	})
+
 	router.Run() // listen and serve on 0.0.0.0:8080
 }
