@@ -7,27 +7,14 @@ import (
 
 	// "time"
 	"github.com/gin-gonic/gin"
+	"github.com/iamBijoyKar/winget-pkg/api/internal/server"
+	logs "github.com/iamBijoyKar/winget-pkg/api/internal/utils"
 	"github.com/joho/godotenv"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
 )
 
 const baseURL = "api/v1"
-
-// printError prints error messages in a consistent format
-func printError(msg string, args ...interface{}) {
-	fmt.Fprintf(os.Stderr, "Error: "+msg+"\n", args...)
-}
-
-// printWarning prints warning messages in a consistent format
-func printWarning(msg string, args ...interface{}) {
-	fmt.Fprintf(os.Stderr, "Warning: "+msg+"\n", args...)
-}
-
-// printInfo prints info messages in a consistent format
-func printInfo(msg string, args ...interface{}) {
-	fmt.Printf("Info: "+msg+"\n", args...)
-}
 
 type User struct {
 	Email  string `bson:"email" json:"email"`
@@ -55,16 +42,28 @@ func authMiddleware(client *mongo.Client) gin.HandlerFunc {
 	}
 }
 
+func rateLimitMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		ipv4 := c.ClientIP()
+		if !server.CheckRateLimit(ipv4) {
+			c.JSON(429, gin.H{"error": "Rate limit exceeded"})
+			c.Abort()
+			return
+		}
+		c.Next()
+	}
+}
+
 func main() {
 	// Load environment variables from .env file
 	err := godotenv.Load()
 	if err != nil {
-		printWarning("No .env file found, using default environment variables")
+		logs.PrintWarning("No .env file found, using default environment variables")
 	}
 	// Check if MONGODB_URL is set
 	MONGODB_URL := os.Getenv("MONGODB_URL")
 	if MONGODB_URL == "" {
-		printWarning("MONGODB_URL not set in .env, using default value")
+		logs.PrintWarning("MONGODB_URL not set in .env, using default value")
 		os.Exit(1)
 	}
 	// Connect to MongoDB
@@ -78,7 +77,7 @@ func main() {
 		if err := client.Disconnect(context.TODO()); err != nil {
 			panic(err)
 		} else {
-			printInfo("MongoDB connection closed successfully")
+			logs.PrintInfo("MongoDB connection closed successfully")
 		}
 	}()
 
