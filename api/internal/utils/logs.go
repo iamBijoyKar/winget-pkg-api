@@ -19,3 +19,8 @@ func PrintWarning(msg string, args ...interface{}) {
 func PrintInfo(msg string, args ...interface{}) {
 	fmt.Printf("Info: "+msg+"\n", args...)
 }
+
+// PrintDebug prints debug messages in a consistent format
+func PrintDebug(msg string, args ...interface{}) {
+	fmt.Printf("Debug: "+msg+"\n", args...)
+}
