@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"regexp"
 	"strings"
@@ -45,11 +46,26 @@ func authMiddleware(client *mongo.Client) gin.HandlerFunc {
 	}
 }
 
-func rateLimitMiddleware(rateLimiter server.RateLimiter) gin.HandlerFunc {
+func rateLimitMiddleware(rateLimiter *server.RateLimiter) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ipv4 := c.ClientIP()
-		if !server.CheckRateLimit(ipv4, &rateLimiter) {
-			c.JSON(429, gin.H{"error": "Rate limit exceeded"})
+
+		// Get rate limit info for headers
+		remaining, reset, limit := server.GetRateLimitInfo(ipv4, rateLimiter)
+
+		// Add rate limit headers
+		c.Header("X-RateLimit-Limit", fmt.Sprintf("%d", limit))
+		c.Header("X-RateLimit-Remaining", fmt.Sprintf("%d", remaining))
+		c.Header("X-RateLimit-Reset", fmt.Sprintf("%d", reset.Unix()))
+
+		if !server.CheckRateLimit(ipv4, rateLimiter) {
+			c.Header("Retry-After", fmt.Sprintf("%d", int(time.Until(reset).Seconds())))
+			c.JSON(429, gin.H{
+				"error":       "Rate limit exceeded",
+				"retry_after": int(time.Until(reset).Seconds()),
+				"limit":       limit,
+				"window":      rateLimiter.GetStats()["window"],
+			})
 			c.Abort()
 			return
 		}
@@ -91,8 +107,27 @@ func main() {
 	router.Use(authMiddleware(client))
 
 	// rateLimitMiddleware checks if the request exceeds the rate limit
-	rateLimiter := server.CreateRateLimiter(100, time.Second) // 100 requests per second
+	rateLimiter := server.CreateRateLimiter(20, time.Second) // 10 requests per second
 	router.Use(rateLimitMiddleware(rateLimiter))
+
+	// Graceful shutdown - stop rate limiter when server shuts down
+	defer rateLimiter.Stop()
+
+	// Add rate limit headers to successful responses
+	router.Use(func(c *gin.Context) {
+		c.Next()
+
+		// Only add headers for successful responses
+		if c.Writer.Status() >= 200 && c.Writer.Status() < 300 {
+			ipv4 := c.ClientIP()
+			remaining, _, limit := server.GetRateLimitInfo(ipv4, rateLimiter)
+
+			// Add additional rate limit headers
+			c.Header("X-RateLimit-Status", "active")
+			c.Header("X-RateLimit-Usage", fmt.Sprintf("%d/%d", limit-remaining, limit))
+			c.Header("X-RateLimit-Percentage", fmt.Sprintf("%.1f", float64(limit-remaining)/float64(limit)*100))
+		}
+	})
 
 	// cache store
 	store := persistence.NewInMemoryStore(time.Second)
@@ -100,6 +135,23 @@ func main() {
 	router.GET(baseURL+"/ping", func(c *gin.Context) {
 		c.JSON(200, gin.H{
 			"message": "pong",
+		})
+	})
+
+	// Rate limit status endpoint
+	router.GET(baseURL+"/rate-limit", func(c *gin.Context) {
+		ipv4 := c.ClientIP()
+		remaining, reset, limit := server.GetRateLimitInfo(ipv4, rateLimiter)
+
+		c.JSON(200, gin.H{
+			"ip": ipv4,
+			"rate_limit": gin.H{
+				"limit":      limit,
+				"remaining":  remaining,
+				"reset":      reset.Unix(),
+				"reset_time": reset.Format(time.RFC3339),
+			},
+			"stats": rateLimiter.GetStats(),
 		})
 	})
 
