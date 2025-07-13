@@ -2,12 +2,20 @@
 
 A fast, reliable REST API for searching Windows Package Manager (winget) packages. Built with Go, secured with API keys, and optimized for performance.
 
+> **This is a free project, built for the tech side project community!**
+>
+> **⚠️ WARNING:**
+> - This API is hosted on a free server (Render.com) and may be slow or rate limited under high load.
+> - Please **do not overuse** the API, **do not scrape** large amounts of data, and be respectful of the service and other users.
+> - Abuse may result in your API key being revoked.
+> - This project is intended for learning, prototyping, and side projects—not for production scraping or heavy automation.
+
 >***The mongodb database is our own proprietary database. It contain all the packages from https://github.com/microsoft/winget-pkgs repo, and we update it frequently. If you want to use the api then request for an api key via mail or other social media platform like X, LinkedIn.***
 
 ## 🚀 Features
 
 - **Powerful Search**: Search across package names, publishers, descriptions, and authors
-- **High Performance**: Rate limited to 100 requests/second with MongoDB optimization
+- **High Performance**: Rate limited to 20 requests/second with MongoDB optimization
 - **Secure Access**: API key authentication with comprehensive middleware protection
 - **RESTful Design**: Clean, intuitive REST API endpoints following best practices
 - **Cross-Platform**: Built with Go for excellent cross-platform compatibility
@@ -32,7 +40,7 @@ winget-pkg-api/
 - **Features**:
   - RESTful API endpoints
   - API key authentication
-  - Rate limiting (100 req/sec)
+  - Rate limiting (20 req/sec)
   - Package search functionality
 
 ### CLI Tool (`/cli`)
@@ -61,63 +69,6 @@ winget-pkg-api/
   - Real-time API status checking
   - Dark/light theme support
 
-## 🚀 Quick Start
-
-### Prerequisites
-
-- Go 1.21+
-- Node.js 18+
-- MongoDB instance
-- pnpm (for website)
-
-### Environment Setup
-
-Create `.env` files in the respective directories:
-
-**API (`/api/.env`)**:
-```env
-MONGODB_URL=mongodb://localhost:27017
-```
-
-**CLI (`/cli/.env`)**:
-```env
-MONGODB_URL=mongodb://localhost:27017
-SALT=your-secret-salt-here
-```
-
-**Cron (`/cron/.env`)**:
-```env
-API_KEY=your-api-key-here
-```
-
-### Running the API
-
-```bash
-cd api
-go mod download
-go run main.go
-```
-
-The API will be available at `http://localhost:8080`
-
-### Running the Website
-
-```bash
-cd website
-pnpm install
-pnpm dev
-```
-
-The website will be available at `http://localhost:3000`
-
-### Creating API Keys
-
-```bash
-cd cli
-go run main.go
-```
-
-Follow the prompts to register a new user and generate an API key.
 
 ## 📚 API Documentation
 
@@ -156,46 +107,27 @@ GET /packageidentifier?identifier=package-identifier
 ```
 
 ### Rate Limiting
-- **Limit**: 100 requests per second
+- **Limit**: 20 requests per second
 - **Header**: `X-RateLimit-Remaining` shows remaining requests
 
-## 🔧 Development
+## ⚠️ Usage Policy & Community Guidelines
 
-### API Development
-```bash
-cd api
-go mod download
-go run main.go
-```
+- This API is **free** for the tech side project community.
+- Please **do not abuse** the service. Heavy scraping, automation, or abuse may result in your API key being revoked.
+- If you need higher limits or have a special use case, please contact the maintainer.
+- Be respectful to other users and the community spirit of this project!
 
-### Website Development
-```bash
-cd website
-pnpm install
-pnpm dev
-```
-
-### Running Tests
-```bash
-# API tests
-cd api
-go test ./...
-
-# Website tests
-cd website
-pnpm test
-```
 
 ## 📦 Deployment
 
 ### API Deployment
-The API is deployed on Render.com with automatic deployments from the main branch.
+The API is deployed on Render.com with automatic deployments from the main branch. (Free server)
 
 ### Website Deployment
-The website is built and deployed using Vercel with automatic deployments.
+The website is built and deployed using Vercel with automatic deployments. (Free server)
 
 ### Cron Job
-The cron job runs on a schedule to monitor API health and performance.
+The cron job runs on a schedule to monitor API health and performance and to prevent cold start.
 
 
 ## 📄 License
@@ -205,6 +137,14 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 📞 Support
 
 For support, please open an issue on GitHub or contact the maintainers.
+
+## 🚨 Free Project & Server Performance Notice
+
+This API and website are provided **completely free** for the tech side project community, and are currently hosted on free-tier servers (Render.com for the API, Vercel for the website). As a result, you may experience slower performance or rate limiting during periods of high load.
+
+**Future plans:**
+- If I secure a job or receive enough donations to cover server costs, I will consider moving the API to a paid server for improved performance and reliability—especially if more users begin to rely on the service.
+- Your support and understanding are appreciated! If you find this project valuable and want to help boost its performance, consider contributing or donating to help cover server expenses.
 
 ---
 
