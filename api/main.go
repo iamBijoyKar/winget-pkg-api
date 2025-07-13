@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gin-contrib/cache"
+	"github.com/gin-contrib/cache/persistence"
 	"github.com/gin-gonic/gin"
 	"github.com/iamBijoyKar/winget-pkg/api/internal/server"
 	logs "github.com/iamBijoyKar/winget-pkg/api/internal/utils"
@@ -82,12 +84,18 @@ func main() {
 		}
 	}()
 
+	// default router with recovery and logger
 	router := gin.Default()
+
 	// authMiddleware checks for the API key in the request header
 	router.Use(authMiddleware(client))
+
 	// rateLimitMiddleware checks if the request exceeds the rate limit
 	rateLimiter := server.CreateRateLimiter(100, time.Second) // 100 requests per second
 	router.Use(rateLimitMiddleware(rateLimiter))
+
+	// cache store
+	store := persistence.NewInMemoryStore(time.Second)
 
 	router.GET(baseURL+"/ping", func(c *gin.Context) {
 		c.JSON(200, gin.H{
@@ -95,7 +103,7 @@ func main() {
 		})
 	})
 
-	router.GET(baseURL+"/search", func(c *gin.Context) {
+	router.GET(baseURL+"/search", cache.CachePageAtomic(store, time.Minute*10, func(c *gin.Context) {
 		query := c.Query("q")
 		query = strings.TrimSpace(query)
 		// logs.PrintDebug("Search query:", query)
@@ -133,9 +141,9 @@ func main() {
 		}
 
 		c.JSON(200, gin.H{"results": results})
-	})
+	}))
 
-	router.GET(baseURL+"/packagename", func(c *gin.Context) {
+	router.GET(baseURL+"/packagename", cache.CachePageAtomic(store, time.Minute*10, func(c *gin.Context) {
 		id := c.Query("name")
 		id = strings.TrimSpace(id)
 		// logs.PrintDebug("Package name:", id)
@@ -166,9 +174,9 @@ func main() {
 		}
 
 		c.JSON(200, gin.H{"results": results})
-	})
+	}))
 
-	router.GET(baseURL+"/packageidentifier", func(c *gin.Context) {
+	router.GET(baseURL+"/packageidentifier", cache.CachePageAtomic(store, time.Minute*10, func(c *gin.Context) {
 		identifier := c.Query("identifier")
 		identifier = strings.TrimSpace(identifier)
 		// logs.PrintDebug("Package identifier:", identifier)
@@ -199,9 +207,9 @@ func main() {
 		}
 
 		c.JSON(200, gin.H{"results": results})
-	})
+	}))
 
-	router.GET(baseURL+"/publisher", func(c *gin.Context) {
+	router.GET(baseURL+"/publisher", cache.CachePageAtomic(store, time.Minute*10, func(c *gin.Context) {
 		name := c.Query("publisher")
 		name = strings.TrimSpace(name)
 		// logs.PrintDebug("Package publisher:", name)
@@ -232,7 +240,7 @@ func main() {
 		}
 
 		c.JSON(200, gin.H{"results": results})
-	})
+	}))
 
 	router.Run() // listen and serve on 0.0.0.0:8080
 }
