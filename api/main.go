@@ -25,7 +25,7 @@ type User struct {
 	ApiKey string `bson:"apiKey" json:"apiKey"`
 }
 
-func authMiddleware(client *mongo.Client) gin.HandlerFunc {
+func authMiddleware(coll *mongo.Collection) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		apiKey := c.GetHeader("X-API-Key")
 		if apiKey == "" {
@@ -34,7 +34,6 @@ func authMiddleware(client *mongo.Client) gin.HandlerFunc {
 			return
 		}
 
-		coll := client.Database("winget").Collection("users")
 		result := coll.FindOne(context.TODO(), gin.H{"apiKey": apiKey})
 		if result.Err() != nil {
 			c.JSON(401, gin.H{"error": "Invalid API key"})
@@ -100,15 +99,16 @@ func main() {
 		}
 	}()
 
-	// package collection
+	// package collection, mongo connection pool
 	pkgColl := client.Database("winget").Collection("packages")
+	userColl := client.Database("winget").Collection("users")
 
 	// default router with recovery and logger
 	router := gin.New()
 	router.Use(gin.Recovery())
 
 	// authMiddleware checks for the API key in the request header
-	router.Use(authMiddleware(client))
+	router.Use(authMiddleware(userColl))
 
 	// rateLimitMiddleware checks if the request exceeds the rate limit
 	rateLimiter := server.CreateRateLimiter(20, time.Second) // 10 requests per second
