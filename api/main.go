@@ -73,6 +73,51 @@ func rateLimitMiddleware(rateLimiter *server.RateLimiter) gin.HandlerFunc {
 	}
 }
 
+type logEntry struct {
+	timestamp string
+	method    string
+	uri       string
+	status    int
+	duration  time.Duration
+}
+
+var logChan = make(chan logEntry, 1000) // buffered channel
+
+func init() {
+	go func() {
+		for entry := range logChan {
+			logs.GinLog("\033[34m[GIN]\033[0m \033[33m%s\033[0m | \033[32m%s\033[0m %s | \033[31m%d\033[0m | \033[31m%v\033[0m",
+				entry.timestamp, entry.method, entry.uri, entry.status, entry.duration)
+		}
+	}()
+}
+
+func loggerMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		start := time.Now()
+		method := c.Request.Method
+		uri := c.Request.RequestURI
+		requestTime := start.Format("2006-01-02 15:04:05")
+
+		c.Next()
+
+		status := c.Writer.Status()
+		duration := time.Since(start)
+
+		select {
+		case logChan <- logEntry{
+			timestamp: requestTime,
+			method:    method,
+			uri:       uri,
+			status:    status,
+			duration:  duration,
+		}:
+		default:
+			// drop log if channel is full to avoid blocking
+		}
+	}
+}
+
 func main() {
 	// Load environment variables from .env file
 	err := godotenv.Load()
@@ -107,6 +152,9 @@ func main() {
 	// default router with recovery and logger
 	router := gin.New()
 	router.Use(gin.Recovery())
+
+	// custom go routine logger
+	router.Use(loggerMiddleware())
 
 	// authMiddleware checks for the API key in the request header
 	router.Use(authMiddleware(userColl))

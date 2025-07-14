@@ -24,3 +24,8 @@ func PrintInfo(msg string, args ...interface{}) {
 func PrintDebug(msg string, args ...interface{}) {
 	fmt.Printf("Debug: "+msg+"\n", args...)
 }
+
+// RequestLog print request data on log
+func GinLog(msg string, args ...interface{}) {
+	fmt.Printf("Log: "+msg+"\n", args...)
+}
