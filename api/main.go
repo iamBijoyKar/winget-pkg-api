@@ -100,8 +100,12 @@ func main() {
 		}
 	}()
 
+	// package collection
+	pkgColl := client.Database("winget").Collection("packages")
+
 	// default router with recovery and logger
-	router := gin.Default()
+	router := gin.New()
+	router.Use(gin.Recovery())
 
 	// authMiddleware checks for the API key in the request header
 	router.Use(authMiddleware(client))
@@ -163,7 +167,7 @@ func main() {
 			c.JSON(400, gin.H{"error": "Query parameter 'q' is required"})
 			return
 		}
-		coll := client.Database("winget").Collection("packages")
+
 		escapedQuery := regexp.QuoteMeta(query)
 		// Use regex to search in multiple fields
 		// This will search for the query in PackageName, Publisher, ShortDescription, and Author fields
@@ -175,7 +179,7 @@ func main() {
 				{"Author": gin.H{"$regex": escapedQuery, "$options": "i"}},
 			},
 		}
-		cursor, err := coll.Find(context.TODO(), filter)
+		cursor, err := pkgColl.Find(context.TODO(), filter)
 		if err != nil {
 			c.JSON(500, gin.H{"error": "Failed to search packages"})
 			return
@@ -203,12 +207,12 @@ func main() {
 			c.JSON(400, gin.H{"error": "Query parameter 'name' is required"})
 			return
 		}
-		coll := client.Database("winget").Collection("packages")
+
 		escapedName := regexp.QuoteMeta(id)
 		filter := gin.H{
 			"PackageName": gin.H{"$regex": escapedName, "$options": "i"},
 		}
-		cursor, err := coll.Find(context.TODO(), filter)
+		cursor, err := pkgColl.Find(context.TODO(), filter)
 		if err != nil {
 			c.JSON(500, gin.H{"error": "Failed to search packages"})
 			return
@@ -236,12 +240,12 @@ func main() {
 			c.JSON(400, gin.H{"error": "Query parameter 'identifier' is required"})
 			return
 		}
-		coll := client.Database("winget").Collection("packages")
+
 		escapedIdentifier := regexp.QuoteMeta(identifier)
 		filter := gin.H{
 			"PackageIdentifier": gin.H{"$regex": escapedIdentifier, "$options": "i"},
 		}
-		cursor, err := coll.Find(context.TODO(), filter)
+		cursor, err := pkgColl.Find(context.TODO(), filter)
 		if err != nil {
 			c.JSON(500, gin.H{"error": "Failed to search packages"})
 			return
@@ -269,12 +273,12 @@ func main() {
 			c.JSON(400, gin.H{"error": "Query parameter 'publisher' is required"})
 			return
 		}
-		coll := client.Database("winget").Collection("packages")
+
 		escapedPublisher := regexp.QuoteMeta(name)
 		filter := gin.H{
 			"Publisher": gin.H{"$regex": escapedPublisher, "$options": "i"},
 		}
-		cursor, err := coll.Find(context.TODO(), filter)
+		cursor, err := pkgColl.Find(context.TODO(), filter)
 		if err != nil {
 			c.JSON(500, gin.H{"error": "Failed to search packages"})
 			return
