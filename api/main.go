@@ -10,6 +10,7 @@ import (
 
 	"github.com/gin-contrib/cache"
 	"github.com/gin-contrib/cache/persistence"
+	"github.com/gin-contrib/gzip"
 	"github.com/gin-gonic/gin"
 	"github.com/iamBijoyKar/winget-pkg/api/internal/server"
 	logs "github.com/iamBijoyKar/winget-pkg/api/internal/utils"
@@ -109,6 +110,8 @@ func main() {
 
 	// authMiddleware checks for the API key in the request header
 	router.Use(authMiddleware(userColl))
+
+	router.Use(gzip.Gzip(gzip.DefaultCompression))
 
 	// rateLimitMiddleware checks if the request exceeds the rate limit
 	rateLimiter := server.CreateRateLimiter(20, time.Second) // 10 requests per second
