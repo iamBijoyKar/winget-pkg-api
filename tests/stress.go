@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"math/rand"
 	"net/http"
 	"strings"
 	"sync"
@@ -10,7 +11,7 @@ import (
 
 // Configuration for the stress test
 type Config struct {
-	APIURL              string
+	BaseAPIURL          string
 	APIKey              string
 	ConcurrentRequests  int
 	TotalRequests       int
@@ -36,6 +37,7 @@ type RequestResult struct {
 	RequestID        int
 	StatusCode       int
 	ResponseTime     time.Duration
+	PackageName      string // ⭐️ Added field to store the package name
 	RateLimitHeaders RateLimitHeaders
 	Error            error
 	Success          bool
@@ -76,17 +78,22 @@ func (s *Stats) Update(result RequestResult) {
 	}
 }
 
-// Make a single HTTP request
-func makeRequest(client *http.Client, config Config, requestID int) RequestResult {
+// Make a single HTTP request with a random package name
+func makeRequest(client *http.Client, config Config, requestID int, packageNames []string) RequestResult {
 	startTime := time.Now()
 
-	// Create request
-	req, err := http.NewRequest("GET", config.APIURL, nil)
+	// Select a random package name from the list
+	packageName := packageNames[rand.Intn(len(packageNames))]
+	fullURL := fmt.Sprintf("%s?name=%s", config.BaseAPIURL, packageName)
+
+	// Create request with the dynamic URL
+	req, err := http.NewRequest("GET", fullURL, nil)
 	if err != nil {
 		return RequestResult{
-			RequestID: requestID,
-			Error:     err,
-			Success:   false,
+			RequestID:   requestID,
+			PackageName: packageName, // Include package name in result
+			Error:       err,
+			Success:     false,
 		}
 	}
 
@@ -98,24 +105,15 @@ func makeRequest(client *http.Client, config Config, requestID int) RequestResul
 	resp, err := client.Do(req)
 	if err != nil {
 		return RequestResult{
-			RequestID: requestID,
-			Error:     err,
-			Success:   false,
+			RequestID:   requestID,
+			PackageName: packageName, // Include package name in result
+			Error:       err,
+			Success:     false,
 		}
 	}
 	defer resp.Body.Close()
 
 	responseTime := time.Since(startTime)
-
-	// Read response body
-	// body, err := io.ReadAll(resp.Body)
-	// if err != nil {
-	// 	return RequestResult{
-	// 		RequestID: requestID,
-	// 		Error:     err,
-	// 		Success:   false,
-	// 	}
-	// }
 
 	// Extract rate limit headers
 	rateLimitHeaders := RateLimitHeaders{
@@ -142,14 +140,15 @@ func makeRequest(client *http.Client, config Config, requestID int) RequestResul
 		RequestID:        requestID,
 		StatusCode:       resp.StatusCode,
 		ResponseTime:     responseTime,
+		PackageName:      packageName, // ⭐️ Save the package name in the result
 		RateLimitHeaders: rateLimitHeaders,
 		Success:          success,
 		RateLimited:      rateLimited,
 	}
 }
 
-// Make concurrent requests
-func makeConcurrentRequests(client *http.Client, config Config, stats *Stats, startID, count int, wg *sync.WaitGroup) {
+// Make concurrent requests, passing the list of package names
+func makeConcurrentRequests(client *http.Client, config Config, stats *Stats, startID, count int, packageNames []string, wg *sync.WaitGroup) {
 	defer wg.Done()
 
 	// Create a channel to collect results
@@ -158,7 +157,7 @@ func makeConcurrentRequests(client *http.Client, config Config, stats *Stats, st
 	// Launch goroutines for concurrent requests
 	for i := 0; i < count; i++ {
 		go func(requestID int) {
-			result := makeRequest(client, config, requestID)
+			result := makeRequest(client, config, requestID, packageNames)
 			resultChan <- result
 		}(startID + i)
 	}
@@ -169,17 +168,18 @@ func makeConcurrentRequests(client *http.Client, config Config, stats *Stats, st
 		stats.Update(result)
 
 		// Print result
+		// ⭐️ Updated log messages to include the package name
 		if result.Success {
-			fmt.Printf("✅ Request %d: Success (%v) - Remaining: %s/%s\n",
-				result.RequestID, result.ResponseTime,
+			fmt.Printf("✅ Request %d [%s]: Success (%v) - Remaining: %s/%s\n",
+				result.RequestID, result.PackageName, result.ResponseTime,
 				result.RateLimitHeaders.Remaining, result.RateLimitHeaders.Limit)
 		} else if result.RateLimited {
-			fmt.Printf("🚫 Request %d: Rate Limited (%v) - Remaining: %s/%s\n",
-				result.RequestID, result.ResponseTime,
+			fmt.Printf("🚫 Request %d [%s]: Rate Limited (%v) - Remaining: %s/%s\n",
+				result.RequestID, result.PackageName, result.ResponseTime,
 				result.RateLimitHeaders.Remaining, result.RateLimitHeaders.Limit)
 		} else {
-			fmt.Printf("❌ Request %d: Failed (%d) - %v\n",
-				result.RequestID, result.StatusCode, result.ResponseTime)
+			fmt.Printf("❌ Request %d [%s]: Failed (%d) - %v\n",
+				result.RequestID, result.PackageName, result.StatusCode, result.ResponseTime)
 		}
 	}
 }
@@ -250,9 +250,20 @@ func printResults(stats *Stats) {
 
 // Run the stress test
 func runStressTest() {
+	// Seed the random number generator
+	rand.Seed(time.Now().UnixNano())
+
+	// Create a list of package names to choose from randomly
+	packageNames := []string{
+		"Notion", "7zip.7zip", "Microsoft.VisualStudioCode", "Google.Chrome",
+		"VideoLAN.VLC", "Mozilla.Firefox", "Discord.Discord", "Spotify.Spotify",
+		"Valve.Steam", "Python.Python.3", "Oracle.JavaRuntimeEnvironment",
+		"Git.Git", "Docker.DockerDesktop", "Obsidian.Obsidian", "SublimeHQ.SublimeText.4",
+	}
+
 	// Configuration
 	config := Config{
-		APIURL:              "https://winget-pkg-api.onrender.com/api/v1/packagename?name=Notion",
+		BaseAPIURL:          "https://winget-pkg-api.onrender.com/api/v1/packagename",
 		APIKey:              "40ea24db0c5151114c0998c8a9019ff92934f30a3b88081706539c8dec2c025f",
 		ConcurrentRequests:  50,
 		TotalRequests:       200,
@@ -277,7 +288,7 @@ func runStressTest() {
 
 	fmt.Println("🚀 Starting API Rate Limit Stress Test")
 	fmt.Println(strings.Repeat("=", 60))
-	fmt.Printf("API URL: %s\n", config.APIURL)
+	fmt.Printf("Base API URL: %s\n", config.BaseAPIURL)
 	fmt.Printf("Concurrent Requests: %d\n", config.ConcurrentRequests)
 	fmt.Printf("Total Requests: %d\n", config.TotalRequests)
 	fmt.Printf("Delay between batches: %v\n", config.DelayBetweenBatches)
@@ -299,7 +310,7 @@ func runStressTest() {
 		startID := (batch-1)*config.ConcurrentRequests + 1
 
 		wg.Add(1)
-		go makeConcurrentRequests(client, config, stats, startID, requestsInThisBatch, &wg)
+		go makeConcurrentRequests(client, config, stats, startID, requestsInThisBatch, packageNames, &wg)
 
 		// Wait for current batch to complete
 		wg.Wait()
